@@ -15,9 +15,9 @@ function cargarTemporadas() {
 
             const optionDefault = document.createElement('option');
             optionDefault.value = '';
-            optionDefault.textContent = 'Seleccione la temporada'
-            listaTemporadas.appendChild(optionDefault); 
-           
+            optionDefault.textContent = 'Seleccione la temporada';
+            listaTemporadas.appendChild(optionDefault);
+
             temporadasUnicas.forEach(temporada => {
                 const option = document.createElement('option');
                 option.value = temporada;
@@ -27,40 +27,68 @@ function cargarTemporadas() {
 
             const optionTodos = document.createElement('option');
             optionTodos.value = 'todas';
-            optionTodos.textContent = 'Todas las temporadas'
-            listaTemporadas.appendChild(optionTodos); 
+            optionTodos.textContent = 'Todas las temporadas';
+            listaTemporadas.appendChild(optionTodos);
+
+            const optionTop = document.createElement('option');
+            optionTop.value = 'top';
+            optionTop.textContent = 'Top 5 episodios';
+            listaTemporadas.appendChild(optionTop);
         })
         .catch(error => {
             console.error('Error al obtener temporadas:', error);
         });
 }
 
-// Funcion para cargar episodios de una temporada
+// Funcion para cargar episodios de una temporada o el Top 5
 function cargarEpisodios() {
-    getDatos(`/series/${serieId}/temporadas/${listaTemporadas.value}`)
+    let url;
+    if (listaTemporadas.value === 'top') {
+        url = `/series/${serieId}/temporadas/top`;
+    } else if (listaTemporadas.value === 'todas') {
+        url = `/series/${serieId}/temporadas/todas`;
+    } else {
+        url = `/series/${serieId}/temporadas/${listaTemporadas.value}`;
+    }
+
+    getDatos(url)
         .then(data => {
-            const temporadasUnicas = [...new Set(data.map(temporada => temporada.temporada))];
             fichaSerie.innerHTML = ''; 
-            temporadasUnicas.forEach(temporada => {
+
+            if (listaTemporadas.value === 'top') {
                 const ul = document.createElement('ul');
                 ul.className = 'episodios-lista';
 
-                const episodiosTemporadaAtual = data.filter(serie => serie.temporada === temporada);
-
-                const listaHTML = episodiosTemporadaAtual.map(serie => `
+                const listaHTML = data.map(episodio => `
                     <li>
-                        ${serie.numeroEpisodio} - ${serie.titulo}
+                        Temporada ${episodio.temporada} - Episodio ${episodio.numeroEpisodio}: ${episodio.titulo}
                     </li>
                 `).join('');
                 ul.innerHTML = listaHTML;
-                
-                const paragrafo = document.createElement('p');
-                const linha = document.createElement('br');
-                paragrafo.textContent = `Temporada ${temporada}`;
-                fichaSerie.appendChild(paragrafo);
-                fichaSerie.appendChild(linha);
                 fichaSerie.appendChild(ul);
-            });
+            } else {
+                const temporadasUnicas = [...new Set(data.map(temporada => temporada.temporada))];
+                temporadasUnicas.forEach(temporada => {
+                    const ul = document.createElement('ul');
+                    ul.className = 'episodios-lista';
+
+                    const episodiosTemporadaAtual = data.filter(serie => serie.temporada === temporada);
+
+                    const listaHTML = episodiosTemporadaAtual.map(serie => `
+                        <li>
+                            ${serie.numeroEpisodio} - ${serie.titulo}
+                        </li>
+                    `).join('');
+                    ul.innerHTML = listaHTML;
+
+                    const paragrafo = document.createElement('p');
+                    const linha = document.createElement('br');
+                    paragrafo.textContent = `Temporada ${temporada}`;
+                    fichaSerie.appendChild(paragrafo);
+                    fichaSerie.appendChild(linha);
+                    fichaSerie.appendChild(ul);
+                });
+            }
         })
         .catch(error => {
             console.error('Error al obtener episodios:', error);
